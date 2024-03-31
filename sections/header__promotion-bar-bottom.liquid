@@ -1,84 +1,109 @@
 {% comment %}
-
-Code created by JadePuma
-Instructions - https://jadepuma.com/blogs/shopify-tutorials/how-to-add-an-alternative-header-announcement-bar-in-the-flex-theme
-Last editted - 26Jan24
- 
+  Code created by JadePuma
+  Instructions - https://jadepuma.com/blogs/shopify-tutorials/how-to-add-an-alternative-header-announcement-bar-in-the-flex-theme
+  Last editted - 3/30/24
 {% endcomment %}
 
 {% comment %} HTML markup {% endcomment %}
 
 {% if section.settings.show_header_promo %}
+  {% comment %} {% if request.design_mode %} {% endcomment %}
+  <section>
+    <div class="header_promo">
+      <div class="header_promo_desktop">{{ section.settings.desktop_text }}</div>
+      <div class="header_promo_mobile">{{ section.settings.mobile_text }}</div>
+    </div>
+  </section>
+  {% comment %} {% endif %} {% endcomment %}
 
-<section>
-<div class="header_promo">
-<div class="header_promo_desktop">{{section.settings.desktop_text}}</div>
-<div class="header_promo_mobile">{{section.settings.mobile_text}}</div>
-</div>
-</section>
+  {% style %}
+    .header_promo{
+        height:{{section.settings.promo_height_desktop}}px;
+        background-color:{{section.settings.background_color}};
+        color: {{section.settings.text_color}};
+        display:flex;
+        align-items:center;
+    }
+    .header_promo_desktop{
+        width:max-content;
+        display:block;
+        font-size:{{section.settings.font_size_desktop}}rem;
+        margin:0 20px;
+        {% if section.settings.text_align_desktop == "center" %}
+        margin:0 auto;
+        {% elsif section.settings.text_align_desktop == "right" %}
+            margin:0 0 0 auto;
 
+        {% endif %}
+        text-align:{{ section.settings.text_align_desktop }};
+        padding:0px {{section.settings.desktop-padding}}px;
+    }
+    .header_promo_desktop > * {
+        font-size:{{section.settings.font_size_desktop}}rem;
+        color:{{ section.settings.text_color }};
 
-{% style %}
-.header_promo{
-    height:{{section.settings.promo_height_desktop}}px;
-    background-color:{{section.settings.background_color}};
-    color: {{section.settings.text_color}};
-    display:flex;
-    align-items:center;
-}
-.header_promo_desktop{
-    width:max-content;
-    display:block;
-    font-size:{{section.settings.font_size_desktop}}px;
-    margin:0 20px;
-    {% if section.settings.text_align_desktop == "center" %}
-    margin:0 auto;
-    {% endif %}
-    text-align:center;
-    padding:0px {{section.settings.desktop-padding}}px;
-}
-.header_promo_mobile{
-    display:none;
-    font-size:{{section.settings.font_size_mobile}}px;
-    margin:0 20px;
-    {% if section.settings.text_align_mobile == "center" %}
-    margin:0 auto;
-    {% endif %}
-    text-align:center;
-    padding:0px {{section.settings.mobile-padding}}px;
-}
-.header_promo a{
-    color:{{section.settings.link_color}};   
-    {% if section.settings.link_underline %}
-    text-decoration:underline;  
-    {% endif %}
-    transition-duration:0;
-}
+    }
+    .header_promo_mobile > * {
+        font-size:{{section.settings.font_size_mobile}}rem;
+        color:{{ section.settings.text_color }};
 
-.header_promo a:hover{
-    color:{{section.settings.link_hover_color}};     
-}
+    }
 
-@media only screen and (max-width: 600px) {
-.header_promo{
- height:{{section.settings.promo_height_mobile}}px;
-} 
-.header_promo_desktop{
-    display:none;
-}
-.header_promo_mobile{
-    display:block;
-}
-}
+    .header_promo_mobile > * a, .header_promo_desktop> * a{
+        color:{{ section.settings.link_color }};
+    }
 
-{% endstyle %}
+    .header_promo_desktop h6 a,
+    .header_promo_desktop h5 a,
+    .header_promo_desktop h4 a,
+    .header_promo_desktop h3 a,
+    .header_promo_desktop h2 a,
+    .header_promo_desktop h1 a,
+    .header_promo_mobile h6 a,
+    .header_promo_mobile h5 a,
+    .header_promo_mobile h4 a,
+    .header_promo_mobile h3 a,
+    .header_promo_mobile h2 a,
+    .header_promo_mobile h1 a {
+        color:{{ section.settings.link_color }};
+    }
+    .header_promo_mobile{
+        display:none;
+        font-size:{{section.settings.font_size_mobile}}px;
+        margin:0 20px;
+        {% if section.settings.text_align_mobile == "center" %}
+        margin:0 auto;
+        {% endif %}
+        text-align:{{ section.settings.text_align_mobile }};
+        padding:0px {{section.settings.mobile-padding}}px;
+    }
+    .header_promo a{
+        color:{{section.settings.link_color}};
+        {% if section.settings.link_underline %}
+        text-decoration:underline;
+        {% endif %}
+        transition-duration:0;
+    }
 
+    .header_promo a:hover{
+        color:{{section.settings.link_hover_color}};
+    }
 
-
+    @media only screen and (max-width: 600px) {
+    .header_promo{
+     height:{{section.settings.promo_height_mobile}}px;
+    }
+    .header_promo_desktop{
+        display:none;
+    }
+    .header_promo_mobile{
+        display:block;
+    }
+    }
+  {% endstyle %}
 {% endif %}
 
 {% schema %}
-
 {
   "name": "JP Header promo",
   "settings": [
@@ -105,52 +130,57 @@ Last editted - 26Jan24
       "type": "range",
       "id": "font_size_desktop",
       "label": "Desktop font-size",
-      "min": 10,
-      "max": 50,
-      "default": 20,
-      "unit": "px"
+      "min": 1,
+      "max": 3,
+      "default": 1,
+      "step": 0.1,
+      "unit": "rem"
     },
-      {
+    {
       "type": "range",
       "id": "desktop-padding",
       "label": "Padding-left/right",
-      "min":0,
+      "min": 0,
       "max": 50,
       "step": 5,
-      "default":0,
+      "default": 0,
       "unit": "px"
     },
     {
-      "type": "text",
+      "type": "richtext",
       "id": "desktop_text",
       "label": "Desktop text",
-      "default":"This header promo is seen on all desktop pages and can include links"
+      "default": "<p>This header promo is seen on all desktop pages and can include links</p>"
     },
     {
-        "type": "select",
-        "id": "text_align_desktop",
-        "label": "Alignment",
-        "default": "center",
-        "options": [
+      "type": "select",
+      "id": "text_align_desktop",
+      "label": "Alignment",
+      "default": "center",
+      "options": [
         {
-            "value": "left",
-            "label": "Left"
+          "value": "left",
+          "label": "Left"
         },
         {
-            "value": "center",
-            "label": "Center"
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
         }
-       ]
+      ]
     },
     {
       "type": "header",
       "content": "Mobile settings"
     },
     {
-      "type": "text",
+      "type": "richtext",
       "id": "mobile_text",
       "label": "Mobile text",
-      "default":"Mobile header promo"
+      "default": "<p>This header promo is seen on all desktop pages and can include links</p>"
     },
     {
       "type": "range",
@@ -165,36 +195,41 @@ Last editted - 26Jan24
       "type": "range",
       "id": "font_size_mobile",
       "label": "Mobile font-size",
-      "min": 10,
-      "max": 50,
-      "default": 18,
-      "unit": "px"
+      "min": 1,
+      "max": 3,
+      "default": 1,
+      "step": 0.1,
+      "unit": "rem"
     },
-        {
+    {
       "type": "range",
       "id": "mobile-padding",
       "label": "Padding-left/right",
-      "min":0,
+      "min": 0,
       "max": 50,
       "step": 5,
-      "default":0,
+      "default": 0,
       "unit": "px"
     },
     {
-        "type": "select",
-        "id": "text_align_mobile",
-        "label": "Alignment",
-        "default": "center",
-        "options": [
+      "type": "select",
+      "id": "text_align_mobile",
+      "label": "Alignment",
+      "default": "center",
+      "options": [
         {
-            "value": "left",
-            "label": "Left"
+          "value": "left",
+          "label": "Left"
         },
         {
-            "value": "center",
-            "label": "Center"
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
         }
-       ]
+      ]
     },
     {
       "type": "header",
@@ -234,7 +269,14 @@ Last editted - 26Jan24
       "label": "Link hover color",
       "default": "rgb(0,0,0)"
     }
-  ]
+  ],
+  "presets": [
+    {
+      "name": "JP Promo Bar Bottom"
+    }
+  ],
+  "enabled_on": {
+    "groups": ["header"]
+  }
 }
-
 {% endschema %}
