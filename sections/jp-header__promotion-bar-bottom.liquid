@@ -1,0 +1,306 @@
+{% comment %} 
+  Custom app section created by JadePuma
+  Instructions - https://jadepuma.com/blogs/shopify-tutorials/how-to-add-an-alternative-header-announcement-bar-in-the-flex-theme
+  Last editted - 4/27/24 
+{% endcomment %}
+
+{% comment %} HTML markup {% endcomment %}
+{% style %}
+  .header_promo {
+    /* height: {{ section.settings.promo_height_desktop |  divided_by: 2 }}px; */
+    /* background-color: {{ section.settings.background_color }}; */
+    display: flex;
+    align-items: center;
+    padding-top: {{ section.settings.promo_height_desktop |  divided_by: 2 }}px;
+    padding-bottom: {{ section.settings.promo_height_desktop |  divided_by: 2 }}px;
+
+  }
+  .header_promo > * {
+    color: {{ section.settings.text_color }}
+     !important;
+  }
+  .header_promo_desktop,
+  .header_promo_mobile {
+    width: 100%;
+    display: block;
+    margin: 0 10px;
+  }
+
+  .header_promo_desktop {
+    {% unless section.settings.width == 'wide' %}
+      max-width: 1200px;
+      margin: 0 auto;
+    {% endunless %}
+  }
+  .header_promo_mobile {
+    display: none;
+  }
+  #shopify-section-{{ section.id }} {
+    background-color: {{ section.settings.background_color }};
+    padding-top: 0;
+    padding-bottom: 0;
+
+    {% if section.settings.show_header_promo %}
+      margin-top: {{ section.settings.top-spacing }}px;
+      margin-bottom: {{ section.settings.bottom-spacing }}px;
+    {% endif %}
+  }
+
+  {% if section.settings.width == 'wide' %}
+    #shopify-section-{{ section.id }}
+    .section {
+      width: 100%;
+      max-width: none;
+    }
+
+    .header_promo_desktop,
+    .header_promo_mobile {
+      margin: 0 20px;
+    }
+
+    #shopify-section-{{ section.id }}
+    > section.section > div.product-app--container > div.container > div.one-whole.column {
+      margin: 0;
+      width: 100%;
+    }
+  {% endif %}
+
+  @media only screen and (max-width: 600px) {
+    .header_promo {
+      /* height: {{ section.settings.promo_height_mobile }}px; */
+      padding-top: {{ section.settings.promo_height_mobile |  divided_by: 2 }}px;
+      padding-bottom: {{ section.settings.promo_height_mobile |  divided_by: 2 }}px;
+    }
+    .header_promo_desktop {
+      display: none;
+    }
+    .header_promo_mobile {
+      display: block;
+    }
+  }
+{% endstyle %}
+
+{% capture desktop_content %}
+  {% if section.settings.font-size_desktop == "h2" %}
+        <h2 class="text-align-{{ section.settings.text_align_desktop }}" style="color: {{ section.settings.text_color }}">
+          {{- section.settings.desktop_text -}}
+          </h2>
+  {% elsif section.settings.font-size_desktop == "h3" %}
+            <h3 class="text-align-{{ section.settings.text_align_desktop }}" style="color: {{ section.settings.text_color }}">
+          {{- section.settings.desktop_text -}}
+          </h3>
+  {% else %}
+                <p class="text-align-{{ section.settings.text_align_desktop }}" style="color: {{ section.settings.text_color }}">
+          {{- section.settings.desktop_text -}}
+          </p>
+  {% endif %}
+
+{% endcapture %}
+
+{% capture mobile_content %}
+  {% if section.settings.font-size_mobile == "h2" %}
+        <h2 class="text-align-{{ section.settings.text_align_mobile }}" style="color: {{ section.settings.text_color }}">
+          {{- section.settings.mobile_text -}}
+          </h2>
+  {% elsif section.settings.font-size_mobile == "h3" %}
+            <h3 class="text-align-{{ section.settings.text_align_mobile }}" style="color: {{ section.settings.text_color }}">
+          {{- section.settings.mobile_text -}}
+          </h3>
+  {% else %}
+                <p class="text-align-{{ section.settings.text_align_mobile }}" style="color: {{ section.settings.text_color }}">
+          {{- section.settings.mobile_text -}}
+          </p>
+  {% endif %}
+{% endcapture %}
+{% if section.settings.show_header_promo %}
+  <section>
+    <div class="header_promo">
+      <div class="header_promo_desktop">
+        {{ desktop_content }}
+      </div>
+      <div class="header_promo_mobile">
+        {{ mobile_content }}
+      </div>
+    </div>
+  </section>
+{% endif %}
+
+{% schema %}
+  {
+    "name": "JP Header Banner Promo",
+    "disabled_on": {
+      "templates": ["*"],
+      "groups": ["footer"]
+    },
+    "presets": [
+      {
+        "name": "JP Header Banner Promo",
+        "category": "JadePuma"
+      }
+    ],
+    "settings": [
+      {
+        "type": "header",
+        "content": "Visibility"
+      },
+      {
+        "type": "checkbox",
+        "id": "show_header_promo",
+        "label": "Show Header Promo",
+        "default": true
+      },
+      {
+        "type": "header",
+        "content": "Color Settings"
+      },
+      {
+        "type": "color",
+        "id": "background_color",
+        "label": "Background Color"
+      }, {
+        "type": "color",
+        "id": "text_color",
+        "label": "Text Color"
+      }, {
+        "type": "header",
+        "content": "Desktop Settings"
+      }, {
+        "type": "textarea",
+        "id": "desktop_text",
+        "label": "Desktop Text",
+        "default": "This header promo is seen on all desktop pages"
+      }, {
+        "type": "range",
+        "id": "promo_height_desktop",
+        "label": "Desktop Vertical Spacing",
+        "min": 10,
+        "max": 200,
+        "step": 10,
+        "default": 50,
+        "unit": "px"
+      }, {
+        "type": "select",
+        "id": "font-size_desktop",
+        "label": "Font Size",
+        "default": "h3",
+        "options": [
+
+          {
+            "value": "h2",
+            "label": "H2"
+          }, {
+            "value": "h3",
+            "label": "H3"
+          }, {
+            "value": "p",
+            "label": "Body Text"
+          }
+        ]
+      }, {
+        "type": "select",
+        "id": "text_align_desktop",
+        "label": "Alignment",
+        "default": "center",
+        "options": [
+          {
+            "value": "left",
+            "label": "Left"
+          }, {
+            "value": "center",
+            "label": "Center"
+          }, {
+            "value": "right",
+            "label": "Right"
+          }
+        ]
+      }, {
+        "type": "header",
+        "content": "Mobile Settings"
+      }, {
+        "type": "textarea",
+        "id": "mobile_text",
+        "label": "Mobile Text",
+        "default": "This header promo is seen on all mobile pages"
+      }, {
+        "type": "range",
+        "id": "promo_height_mobile",
+        "label": "Mobile Vertical Spacing",
+        "min": 10,
+        "max": 200,
+        "step": 10,
+        "default": 50,
+        "unit": "px"
+      }, {
+        "type": "select",
+        "id": "font-size_mobile",
+        "label": "Font Size",
+        "default": "h3",
+        "options": [
+
+          {
+            "value": "h2",
+            "label": "H2"
+          }, {
+            "value": "h3",
+            "label": "H3"
+          }, {
+            "value": "p",
+            "label": "Body Text"
+          }
+        ]
+      }, {
+        "type": "select",
+        "id": "text_align_mobile",
+        "label": "Alignment",
+        "default": "center",
+        "options": [
+          {
+            "value": "left",
+            "label": "Left"
+          }, {
+            "value": "center",
+            "label": "Center"
+          }, {
+            "value": "right",
+            "label": "Right"
+          }
+        ]
+      }, {
+        "type": "header",
+        "content": "Layout"
+      }, {
+        "type": "select",
+        "id": "width",
+        "label": "Width",
+        "default": "standard",
+        "options": [
+          {
+            "value": "standard",
+            "label": "Standard"
+          }, {
+            "value": "wide",
+            "label": "Wide"
+          }
+        ]
+      }, {
+        "type": "range",
+        "id": "top-spacing",
+        "label": "Top Spacing",
+        "min": 0,
+        "max": 100,
+        "step": 10,
+        "default": 0,
+        "unit": "px"
+      }, {
+        "type": "range",
+        "id": "bottom-spacing",
+        "label": "Bottom Spacing",
+        "min": 0,
+        "max": 100,
+        "step": 10,
+        "default": 0,
+        "unit": "px"
+      }
+    ]
+  }
+{% endschema %}
