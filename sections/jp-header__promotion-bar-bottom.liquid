@@ -1,306 +1,298 @@
-{% comment %} 
-  Custom app section created by JadePuma
-  Instructions - https://jadepuma.com/blogs/shopify-tutorials/how-to-add-an-alternative-header-announcement-bar-in-the-flex-theme
-  Last editted - 4/27/24 
-{% endcomment %}
-
-{% comment %} HTML markup {% endcomment %}
-{% style %}
-  .header_promo {
-    /* height: {{ section.settings.promo_height_desktop |  divided_by: 2 }}px; */
-    /* background-color: {{ section.settings.background_color }}; */
-    display: flex;
-    align-items: center;
-    padding-top: {{ section.settings.promo_height_desktop |  divided_by: 2 }}px;
-    padding-bottom: {{ section.settings.promo_height_desktop |  divided_by: 2 }}px;
-
-  }
-  .header_promo > * {
-    color: {{ section.settings.text_color }}
-     !important;
-  }
-  .header_promo_desktop,
-  .header_promo_mobile {
-    width: 100%;
-    display: block;
-    margin: 0 10px;
-  }
-
-  .header_promo_desktop {
-    {% unless section.settings.width == 'wide' %}
-      max-width: 1200px;
-      margin: 0 auto;
-    {% endunless %}
-  }
-  .header_promo_mobile {
-    display: none;
-  }
-  #shopify-section-{{ section.id }} {
-    background-color: {{ section.settings.background_color }};
-    padding-top: 0;
-    padding-bottom: 0;
-
-    {% if section.settings.show_header_promo %}
-      margin-top: {{ section.settings.top-spacing }}px;
-      margin-bottom: {{ section.settings.bottom-spacing }}px;
-    {% endif %}
-  }
-
-  {% if section.settings.width == 'wide' %}
-    #shopify-section-{{ section.id }}
-    .section {
-      width: 100%;
-      max-width: none;
-    }
-
-    .header_promo_desktop,
-    .header_promo_mobile {
-      margin: 0 20px;
-    }
-
-    #shopify-section-{{ section.id }}
-    > section.section > div.product-app--container > div.container > div.one-whole.column {
-      margin: 0;
-      width: 100%;
-    }
-  {% endif %}
-
-  @media only screen and (max-width: 600px) {
-    .header_promo {
-      /* height: {{ section.settings.promo_height_mobile }}px; */
-      padding-top: {{ section.settings.promo_height_mobile |  divided_by: 2 }}px;
-      padding-bottom: {{ section.settings.promo_height_mobile |  divided_by: 2 }}px;
-    }
-    .header_promo_desktop {
-      display: none;
-    }
-    .header_promo_mobile {
-      display: block;
-    }
-  }
-{% endstyle %}
-
-{% capture desktop_content %}
-  {% if section.settings.font-size_desktop == "h2" %}
-        <h2 class="text-align-{{ section.settings.text_align_desktop }}" style="color: {{ section.settings.text_color }}">
-          {{- section.settings.desktop_text -}}
-          </h2>
-  {% elsif section.settings.font-size_desktop == "h3" %}
-            <h3 class="text-align-{{ section.settings.text_align_desktop }}" style="color: {{ section.settings.text_color }}">
-          {{- section.settings.desktop_text -}}
-          </h3>
-  {% else %}
-                <p class="text-align-{{ section.settings.text_align_desktop }}" style="color: {{ section.settings.text_color }}">
-          {{- section.settings.desktop_text -}}
-          </p>
-  {% endif %}
-
-{% endcapture %}
-
-{% capture mobile_content %}
-  {% if section.settings.font-size_mobile == "h2" %}
-        <h2 class="text-align-{{ section.settings.text_align_mobile }}" style="color: {{ section.settings.text_color }}">
-          {{- section.settings.mobile_text -}}
-          </h2>
-  {% elsif section.settings.font-size_mobile == "h3" %}
-            <h3 class="text-align-{{ section.settings.text_align_mobile }}" style="color: {{ section.settings.text_color }}">
-          {{- section.settings.mobile_text -}}
-          </h3>
-  {% else %}
-                <p class="text-align-{{ section.settings.text_align_mobile }}" style="color: {{ section.settings.text_color }}">
-          {{- section.settings.mobile_text -}}
-          </p>
-  {% endif %}
-{% endcapture %}
 {% if section.settings.show_header_promo %}
-  <section>
-    <div class="header_promo">
-      <div class="header_promo_desktop">
-        {{ desktop_content }}
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  
+      {% assign fontSizeDesktop = section.settings.font_size_desktop %}
+      {% assign fontSizeMobile = section.settings.font_size_mobile %}
+      
+      
+      
+      <div id="announcement_main" style="background-color: {{ section.settings.background_color }}">
+      <ul class="announcement_container">
+         {% for block in section.blocks %}
+          <li>
+            <div class="text_container"  style="background-color:{{block.settings.background_color}};">
+              <span class="desktop_only">{{ block.settings.title }}</span>
+              {% if block.settings.text_mobile != blank %}  
+                <span class="mobile_only">{{ block.settings.text_mobile }}</span>
+              {% else %}
+                <span class="mobile_only">{{ block.settings.title }}</span>
+              {% endif %}
+            </div>
+          </li>
+         {% endfor %}
+      </ul>
       </div>
-      <div class="header_promo_mobile">
-        {{ mobile_content }}
-      </div>
-    </div>
-  </section>
-{% endif %}
-
-{% schema %}
-  {
-    "name": "JP Header Banner Promo",
-    "disabled_on": {
-      "templates": ["*"],
-      "groups": ["footer"]
-    },
-    "presets": [
-      {
-        "name": "JP Header Banner Promo",
-        "category": "JadePuma"
-      }
-    ],
-    "settings": [
-      {
-        "type": "header",
-        "content": "Visibility"
-      },
-      {
-        "type": "checkbox",
-        "id": "show_header_promo",
-        "label": "Show Header Promo",
-        "default": true
-      },
-      {
-        "type": "header",
-        "content": "Color Settings"
-      },
-      {
-        "type": "color",
-        "id": "background_color",
-        "label": "Background Color"
-      }, {
-        "type": "color",
-        "id": "text_color",
-        "label": "Text Color"
-      }, {
-        "type": "header",
-        "content": "Desktop Settings"
-      }, {
-        "type": "textarea",
-        "id": "desktop_text",
-        "label": "Desktop Text",
-        "default": "This header promo is seen on all desktop pages"
-      }, {
-        "type": "range",
-        "id": "promo_height_desktop",
-        "label": "Desktop Vertical Spacing",
-        "min": 10,
-        "max": 200,
-        "step": 10,
-        "default": 50,
-        "unit": "px"
-      }, {
-        "type": "select",
-        "id": "font-size_desktop",
-        "label": "Font Size",
-        "default": "h3",
-        "options": [
-
-          {
-            "value": "h2",
-            "label": "H2"
-          }, {
-            "value": "h3",
-            "label": "H3"
-          }, {
-            "value": "p",
-            "label": "Body Text"
-          }
-        ]
-      }, {
-        "type": "select",
-        "id": "text_align_desktop",
-        "label": "Alignment",
-        "default": "center",
-        "options": [
-          {
-            "value": "left",
-            "label": "Left"
-          }, {
-            "value": "center",
-            "label": "Center"
-          }, {
-            "value": "right",
-            "label": "Right"
-          }
-        ]
-      }, {
-        "type": "header",
-        "content": "Mobile Settings"
-      }, {
-        "type": "textarea",
-        "id": "mobile_text",
-        "label": "Mobile Text",
-        "default": "This header promo is seen on all mobile pages"
-      }, {
-        "type": "range",
-        "id": "promo_height_mobile",
-        "label": "Mobile Vertical Spacing",
-        "min": 10,
-        "max": 200,
-        "step": 10,
-        "default": 50,
-        "unit": "px"
-      }, {
-        "type": "select",
-        "id": "font-size_mobile",
-        "label": "Font Size",
-        "default": "h3",
-        "options": [
-
-          {
-            "value": "h2",
-            "label": "H2"
-          }, {
-            "value": "h3",
-            "label": "H3"
-          }, {
-            "value": "p",
-            "label": "Body Text"
-          }
-        ]
-      }, {
-        "type": "select",
-        "id": "text_align_mobile",
-        "label": "Alignment",
-        "default": "center",
-        "options": [
-          {
-            "value": "left",
-            "label": "Left"
-          }, {
-            "value": "center",
-            "label": "Center"
-          }, {
-            "value": "right",
-            "label": "Right"
-          }
-        ]
-      }, {
-        "type": "header",
-        "content": "Layout"
-      }, {
-        "type": "select",
-        "id": "width",
-        "label": "Width",
-        "default": "standard",
-        "options": [
-          {
-            "value": "standard",
-            "label": "Standard"
-          }, {
-            "value": "wide",
-            "label": "Wide"
-          }
-        ]
-      }, {
-        "type": "range",
-        "id": "top-spacing",
-        "label": "Top Spacing",
-        "min": 0,
-        "max": 100,
-        "step": 10,
-        "default": 0,
-        "unit": "px"
-      }, {
-        "type": "range",
-        "id": "bottom-spacing",
-        "label": "Bottom Spacing",
-        "min": 0,
-        "max": 100,
-        "step": 10,
-        "default": 0,
-        "unit": "px"
-      }
-    ]
+      
+      {% if section.blocks.size > 1  %}
+  <script>
+  var x = 0,
+      container = $('.announcement_container'),
+      items = container.find('li'),
+      containerHeight = 0,
+      numberVisible = 5,
+      intervalSec = {{ section.settings.announcement_delay | json}} * 1000;
+  
+  if(!container.find('li:first').hasClass("first")){
+    container.find('li:first').addClass("first");
   }
-{% endschema %}
+  
+  items.each(function(){
+    if(x < numberVisible){
+      containerHeight = containerHeight + $(this).outerHeight();
+      x++;
+    }
+  });
+  
+  container.css({ height: containerHeight, overflow: "hidden" });
+  
+  function vertCycle() {
+    var firstItem = container.find('li.first'); // Select the first item as a jQuery object
+    var firstItemHtml = firstItem.html(); // Get the HTML content
+  
+    container.append('<li>'+firstItemHtml+'</li>');
+    firstItem.animate({ marginTop: "-39px" }, {{section.settings.transition_speed}}, function(){  
+      $(this).remove(); 
+      container.find('li:first').addClass("first"); 
+    });
+  }
+  
+  if(intervalSec < 700){
+    intervalSec = 700;
+  }
+  
+  var init = setInterval(vertCycle, intervalSec);
+  
+  container.hover(function(){
+    clearInterval(init);
+  }, function(){
+    init = setInterval(vertCycle, intervalSec);
+  });
+  </script>
+      
+      
+      {% endif %}
+      
+      <style>
+      
+      
+      
+      
+      ul.announcement_container {
+        left:0;
+        width: 100%;
+        padding: 0;
+        text-align:center;
+        max-height:40px;
+        overflow:hidden;
+      }
+      
+      ul.announcement_container li {
+        position:relative;
+        color: black;
+        list-style-type: none;
+        height:40px;
+        text-align:center;
+        left:50%;
+        transform:translateX(-50%);
+      }
+      
+      .text_container{
+        width:100%;
+        position:absolute;
+        top:50%;
+        transform:translateY(-50%);
+        color:{{section.settings.text_color}};
+        height:100%;
+        font-size:{{fontSizeDesktop}}px;
+        letter-spacing: 0px;
+        font-weight:400;
+        padding-left:20px;
+        padding-right:20px;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        background-color:{{section.settings.background_color}};
+      }
+      
+      .text_container a{
+         color: {{section.settings.link_color}};
+      
+          {% if section.settings.link_underline %}
+          text-decoration:underline !important;
+          {% endif %}
+      }
+      
+      .text_container a:hover{
+         color: {{section.settings.link_hover_color}};
+      }
+      
+      @media only screen and (max-width: 480px) {
+      .text_container{
+        font-size:{{fontSizeMobile}}px;
+      }
+      ul.announcement_container {
+        
+        top:-{{fontSizeMobile}}px;
+      
+      }
+      
+      }
+      
+      
+      .mobile_only{
+        display:none;
+      }
+      
+      @media only screen and (max-width: 798px) {
+        .mobile_only{
+          display:block;
+        }
+        .desktop_only{
+          display:none;
+        }
+      }
+      
+      
+      </style>
+      
+      
+      
+      
+      <style>
+      #announcement_main{
+         height:40px;
+         width:100%;
+         z-index:100;
+      }
+      
+      </style>
+      
+      
+      
+      {% endif %}
+      
+      
+      {% schema %}
+      {
+         "name":"JP Header promo slider",
+         "disabled_on": {
+        "templates": ["*"],
+        "groups": ["footer"]
+      },
+         "settings": [
+        
+                    {
+                      "type": "checkbox",
+                      "id": "show_header_promo",
+                      "label": "Show header promo"
+                  },
+                   {
+                   "type": "range",
+                    "min": 1,
+                    "max": 10,
+                    "step": 0.5,
+                    "id":"announcement_delay",
+                    "unit": "sec",
+                    "label":"Delay",
+                    "default": 3
+                  },
+                   {
+                   "type": "range",
+                    "min": 250,
+                    "max": 2500,
+                    "step": 250,
+                    "id":"transition_speed",
+                    "unit": "ms",
+                    "label":"Transition speed (milliseconds)",
+                    "default": 500
+                  },
+                {
+                  "type": "range",
+                  "id": "font_size_desktop",
+                  "label": "Desktop font-size",
+                  "min": 10,
+                  "max": 50,
+                  "default": 20,
+                  "unit": "px"
+                },
+                {
+                  "type": "range",
+                  "id": "font_size_mobile",
+                  "label": "Mobile font-size",
+                  "min": 10,
+                  "max": 50,
+                  "default": 20,
+                  "unit": "px"
+                },
+                  {
+                  "type": "color",
+                  "id": "background_color",
+                  "label": "Background color"
+                },
+                {
+                "type": "color",
+                "id": "text_color",
+                "label": "Color"
+                },
+                {
+                  "type": "color",
+                  "id": "link_color",
+                  "label": "Link color"
+                },
+                  {
+                  "type": "color",
+                  "id": "link_hover_color",
+                  "label": "Link hover color"
+                },
+                    {
+                    "type": "checkbox",
+                    "id": "link_underline",
+                    "label": "Link underline",
+                    "default": false
+                  },
+                  {
+      "type": "range",
+      "id": "promo_height_desktop",
+      "label": "Desktop Vertical Spacing",
+      "min": 10,
+      "max": 200,
+      "step": 10,
+      "default": 50,
+      "unit": "px"
+    }
+         ],
+         "blocks":[
+            {
+               "type":"text",
+               "name":"Announcement",
+               "settings":[
+                  {
+                  "type":"text",
+                  "id":"title",
+                  "label":"Desktop Text"
+                  },
+                  {
+                  "type":"text",
+                  "id":"text_mobile",
+                  "label":"Mobile Text (optional)"
+                  },
+                  {
+                    "type": "color",
+                    "id": "background_color",
+                    "label": "Background"
+                  }
+               ]
+            }
+         ],
+         "presets":[
+            {
+               "name":"JP Header promo slider"
+              
+            }
+         ]
+      }
+      
+      {% endschema %}
+      
+      
+      
