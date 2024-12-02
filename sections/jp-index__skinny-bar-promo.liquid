@@ -1,6 +1,8 @@
 {% comment %} 
   Custom section created by JadePuma
   Last editted - 1DEC24 
+
+  **NOTE** DO NOT AUTO FORMAT THIS DOCUMENT
 {% endcomment %}
 
 {% style %}
@@ -85,28 +87,20 @@
       {% endif %}
     {% endcapture %}
 
-    #shopify-section-{{ section.id }}
-    #text-{{ block.id }}
-    -block {
+    #shopify-section-{{ section.id }} #text-{{ block.id }}-block {
       background-color: {{ block.settings.background_color }};
     }
-    #shopify-section-{{ section.id }}#text-{{ block.id }}-block span *:not(a) {
+    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span *:not(a) {
       {{ text_color }}
     }
-    #shopify-section-{{ section.id }}
-    #text-{{ block.id }}
-    -block span a
-    , #shopify-section-{{ section.id }}
-    #text-{{ block.id }}
-    -block span a em
-    , #shopify-section-{{ section.id }}
-    #text-{{ block.id }}
-    -block span a strong {
+    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span a, 
+    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span a em, 
+    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span a strong {
       {{ link_color }}
     }
-    #shopify-section-{{ section.id }}#text-{{ block.id }}-block span a:hover,
-    #shopify-section-{{ section.id }}#text-{{ block.id }}-block span a:hover em,
-    #shopify-section-{{ section.id }}#text-{{ block.id }}-block span a:hover strong {
+    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span a:hover,
+    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span a:hover em,
+    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span a:hover strong {
       {{ link_hover_color }}
     }
 
