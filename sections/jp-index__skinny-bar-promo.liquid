@@ -1,10 +1,3 @@
-{% comment %} 
-  Custom section created by JadePuma
-  Last editted - 3MAR25 
-
-  **NOTE** DO NOT AUTO FORMAT THIS DOCUMENT
-{% endcomment %}
-
 {%- # First check for calculator - pure Liquid render -%}
 {% assign has_calculator = false %}
 {% assign shipping_threshold = 0 %}
@@ -16,9 +9,11 @@
   {% case block.type %}
     {% when 'free_shipping_calculator' %}
       {% assign has_calculator = true %}
+      {% assign calculator_threshold = block.settings.threshold | default: "0" %}
       {% assign calculator = block.settings %}
+      {% assign calculator = calculator | hash_merge: threshold: calculator_threshold %}
     {% when 'free_shipping_alert' %}
-      {% assign shipping_threshold = block.settings.threshold %}
+      {% assign shipping_threshold = block.settings.threshold | default: "0" %}
       {% assign alert = block.settings %}
       {% assign has_alert = true %}
     {% when 'announcement' %}
@@ -116,6 +111,7 @@
   
   #shopify-section-{{ section.id }} .calculator-wrapper {
     height: calc(40px + ({{ section.settings.desktop_spacing }}px * 2));
+    padding: 0 10px;
     display: flex;
     align-items: center;
     justify-content: {% case section.settings.desktop_alignment %}
@@ -128,6 +124,7 @@
   /* Add padding to shipping alert only when visible (threshold met) */
   #shopify-section-{{ section.id }} .skinny-banner-wrapper[data-threshold-met="true"] .shipping-alert {
     height: calc(40px + ({{ section.settings.desktop_spacing }}px * 2));
+    padding: 0 10px;
     display: flex;
     align-items: center;
     justify-content: {% case section.settings.desktop_alignment %}
@@ -180,6 +177,7 @@
   
   #shopify-section-{{ section.id }} .announcement {
     height: calc(40px + ({{ section.settings.desktop_spacing }}px * 2));
+    padding: 0 10px;
     display: flex;
     align-items: center;
     justify-content: {% case section.settings.desktop_alignment %}
@@ -322,9 +320,6 @@
     "name": "JP Skinny Banner",
     "tag": "section",
     "class": "skinny-banner-section",
-    "enabled_on": {
-      "groups": ["header"]
-    },
     "settings": [
       {
         "type": "header",
@@ -357,26 +352,22 @@
       {
         "type": "color",
         "id": "background_color",
-        "label": "Background color",
-        "default": "#f8f8f8"
+        "label": "Background color"
       },
       {
         "type": "color",
         "id": "text_color",
-        "label": "Text color",
-        "default": "#333333"
+        "label": "Text color"
       },
       {
         "type": "color",
         "id": "link_color",
-        "label": "Link color",
-        "default": "#000000"
+        "label": "Link color"
       },
       {
         "type": "color",
         "id": "link_hover_color",
-        "label": "Link hover color",
-        "default": "#555555"
+        "label": "Link hover color"
       },
       {
         "type": "checkbox",
@@ -395,7 +386,7 @@
         "max": 64,
         "step": 1,
         "unit": "px",
-        "label": "Desktop vertical spacing",
+        "label": "Desktop vertical padding",
         "default": 16
       },
       {
@@ -429,7 +420,7 @@
         "max": 32,
         "step": 1,
         "unit": "px",
-        "label": "Mobile vertical spacing",
+        "label": "Mobile vertical padding",
         "default": 12
       },
       {
@@ -509,20 +500,19 @@
             "type": "text",
             "id": "threshold",
             "label": "Free shipping threshold",
-            "default": "75.00",
             "info": "Show/hide this alert based on cart value (e.g., 75.00)"
           },
           {
             "type": "richtext",
             "id": "desktop_text",
             "label": "Desktop text",
-            "default": "<p>Free shipping on all orders!</p>"
+            "default": "<p>FREE shipping on all orders!</p>"
           },
           {
             "type": "richtext",
             "id": "mobile_text",
             "label": "Mobile text",
-            "default": "<p>Free shipping!</p>"
+            "default": "<p>FREE shipping!</p>"
           },
           {
             "type": "header",
@@ -559,7 +549,6 @@
             "type": "text",
             "id": "threshold",
             "label": "Free shipping threshold",
-            "default": "200.00",
             "info": "Show/hide this calculator based on cart value (e.g., 75.00)"
           },
           {
@@ -570,14 +559,14 @@
             "type": "richtext",
             "id": "empty_cart_desktop",
             "label": "Desktop text",
-            "default": "<p>Free shipping on orders over $[threshold]</p>",
+            "default": "<p>FREE shipping on orders over [threshold]</p>",
             "info": "Use [threshold] to show threshold amount"
           },
           {
             "type": "richtext",
             "id": "empty_cart_mobile",
             "label": "Mobile text",
-            "default": "<p>Free shipping over $[threshold]</p>",
+            "default": "<p>FREE shipping over [threshold]</p>",
             "info": "Use [threshold] to show threshold amount"
           },
           {
@@ -588,14 +577,14 @@
             "type": "richtext",
             "id": "progress_desktop",
             "label": "Desktop text",
-            "default": "<p>Add $[remaining] more for free shipping</p>",
+            "default": "<p>Add [remaining] more for FREE shipping</p>",
             "info": "Use [remaining] to show calculated amount left"
           },
           {
             "type": "richtext",
             "id": "progress_mobile",
             "label": "Mobile text",
-            "default": "<p>$[remaining] to free shipping</p>",
+            "default": "<p>[remaining] to FREE shipping</p>",
             "info": "Use [remaining] to show calculated amount left"
           },
           {
@@ -606,13 +595,13 @@
             "type": "richtext",
             "id": "desktop_success_text",
             "label": "Desktop text",
-            "default": "<p>Congratulations! You have free shipping</p>"
+            "default": "<p>Congratulations! You have FREE shipping</p>"
           },
           {
             "type": "richtext",
             "id": "mobile_success_text",
             "label": "Mobile text",
-            "default": "<p>You have free shipping!</p>"
+            "default": "<p>You have FREE shipping!</p>"
           },
           {
             "type": "header",
@@ -643,43 +632,7 @@
     ],
     "presets": [
       {
-        "name": "JP Skinny Banner",
-        "blocks": [
-          {
-            "type": "announcement",
-            "settings": {
-              "desktop_text": "<p>First Announcement (Desktop)</p>",
-              "mobile_text": "<p>First Announcement (Mobile)</p>"
-            }
-          },
-          {
-            "type": "announcement",
-            "settings": {
-              "desktop_text": "<p>Second Announcement (Desktop)</p>",
-              "mobile_text": "<p>Second Announcement (Mobile)</p>"
-            }
-          },
-          {
-            "type": "free_shipping_alert",
-            "settings": {
-              "threshold": "22.00",
-              "desktop_text": "<p>Congratulations! You've unlocked free shipping!</p>",
-              "mobile_text": "<p>You've unlocked free shipping!</p>"
-            }
-          },
-          {
-            "type": "free_shipping_calculator",
-            "settings": {
-              "threshold": "25.00",
-              "empty_cart_desktop": "<p>Free shipping on orders over [threshold]</p>",
-              "empty_cart_mobile": "<p>Free shipping over [threshold]</p>",
-              "progress_desktop": "<p>Add [remaining] more for free shipping</p>",
-              "progress_mobile": "<p>[remaining] to free shipping</p>",
-              "desktop_success_text": "<p>Congratulations! You have free shipping</p>",
-              "mobile_success_text": "<p>You have free shipping!</p>"
-            }
-          }
-        ]
+        "name": "JP Skinny Banner"
       }
     ]
   }
