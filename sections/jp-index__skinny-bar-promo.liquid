@@ -1,369 +1,478 @@
 {% comment %} 
   Custom section created by JadePuma
-  Last editted - 1DEC24 
+  Last editted - 3MAR25 
 
   **NOTE** DO NOT AUTO FORMAT THIS DOCUMENT
 {% endcomment %}
 
-{% style %}
-  #shopify-section-{{ section.id }} .announcement_main {
-    height: {{ section.settings.desktop_height }}px;
-    width: 100%;
-    z-index: 100;
-  }
-  #shopify-section-{{ section.id }}
-  ul.announcement_container {
-    max-height: {{ section.settings.desktop_height }}px;
-    height: {{ section.settings.desktop_height }}px;
-    left: 0;
-    width: 100%;
-    padding: 0;
-    text-align: center;
-    overflow: hidden;
-  }
+{%- # First check for calculator - pure Liquid render -%}
+{% assign has_calculator = false %}
+{% assign shipping_threshold = 0 %}
+{% assign announcement_texts = '' %}
+{% assign has_alert = false %}
 
-  #shopify-section-{{ section.id }}
-  ul.announcement_container li {
-    height: {{ section.settings.desktop_height }}px;
-    position: relative;
-    list-style-type: none;
-    text-align: center;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-  #shopify-section-{{ section.id }}
-  .text_container {
-    width: 100%;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    color: {{ section.settings.text_color }};
-    height: 100%;
-    letter-spacing: 0;
-    font-weight: 400;
-    padding-left: 20px;
-    padding-right: 20px;
-    display: flex;
-    justify-content: {{ section.settings.desktop_alignment }};
-    align-items: center;
-    background-color: {{ section.settings.background_color }};
-  }
+{%- # First pass: gather settings -%}
+{% for block in section.blocks %}
+  {% case block.type %}
+    {% when 'free_shipping_calculator' %}
+      {% assign has_calculator = true %}
+      {% assign calculator = block.settings %}
+    {% when 'free_shipping_alert' %}
+      {% assign shipping_threshold = block.settings.threshold %}
+      {% assign alert = block.settings %}
+      {% assign has_alert = true %}
+    {% when 'announcement' %}
+      {% assign announcement_texts = announcement_texts | append: block.settings.desktop_text | append: '::' | append: block.settings.mobile_text | append: ',' %}
+  {% endcase %}
+{% endfor %}
 
-  #shopify-section-{{ section.id }}
-  .text_container span a {
-    color: {{ section.settings.link_color }};
-
-    {% if section.settings.link_underline %}
-      text-decoration: underline !important;
+<div class="skinny-banner-wrapper"
+  {% unless has_calculator %}
+    {% if has_alert %}
+      {% assign threshold_cents = shipping_threshold | times: 100 %}
+      {% assign threshold_met = false %}
+      {% if cart.total_price >= threshold_cents %}
+        {% assign threshold_met = true %}
+      {% endif %}
+      data-threshold="{{ shipping_threshold }}"
+      data-threshold-met="{{ threshold_met }}"
+      data-threshold-cents="{{ threshold_cents }}"
     {% endif %}
-  }
+  {% endunless %}
+>
+  {% if has_calculator %}
+    {% assign threshold_formatted = calculator.threshold | times: 100 | money %}
+    {% assign empty_desktop = calculator.empty_cart_desktop | replace: '[threshold]', threshold_formatted %}
+    {% assign empty_mobile = calculator.empty_cart_mobile | replace: '[threshold]', threshold_formatted %}
+    
+    {% comment %}Determine initial state{% endcomment %}
+    {% assign initial_state = 'empty' %}
+    {% assign threshold_cents = calculator.threshold | times: 100 %}
+    {% if cart.item_count > 0 %}
+      {% if cart.total_price >= threshold_cents %}
+        {% assign initial_state = 'success' %}
+      {% else %}
+        {% assign initial_state = 'progress' %}
+        {% assign remaining_cents = threshold_cents | minus: cart.total_price %}
+        {% assign remaining_formatted = remaining_cents | money %}
+      {% endif %}
+    {% endif %}
+    
+    {% comment %}Pre-format progress message{% endcomment %}
+    {% if initial_state == 'progress' %}
+      {% assign progress_desktop = calculator.progress_desktop | replace: '[remaining]', remaining_formatted %}
+      {% assign progress_mobile = calculator.progress_mobile | replace: '[remaining]', remaining_formatted %}
+    {% else %}
+      {% assign remaining_formatted = threshold_cents | money %}
+      {% assign progress_desktop = calculator.progress_desktop | replace: '[remaining]', remaining_formatted %}
+      {% assign progress_mobile = calculator.progress_mobile | replace: '[remaining]', remaining_formatted %}
+    {% endif %}
+    
+    <div class="calculator-wrapper" 
+      data-threshold="{{ calculator.threshold }}"
+      data-state="{{ initial_state }}"
+      data-threshold-cents="{{ calculator.threshold | times: 100 }}"
+    >
+      <div class="calculator-message" data-state="empty">
+        <span class="desktop">{{ empty_desktop }}</span>
+        <span class="mobile">{{ empty_mobile }}</span>
+      </div>
+      <div class="calculator-message" data-state="progress">
+        <span class="desktop">{{ progress_desktop }}</span>
+        <span class="mobile">{{ progress_mobile }}</span>
+      </div>
+      <div class="calculator-message" data-state="success">
+        <span class="desktop">{{ calculator.desktop_success_text }}</span>
+        <span class="mobile">{{ calculator.mobile_success_text }}</span>
+      </div>
+    </div>
+  {% else %}
+    <div class="banner-message shipping-alert">
+      <span class="desktop">{{ alert.desktop_text }}</span>
+      <span class="mobile">{{ alert.mobile_text }}</span>
+    </div>
+    <div class="announcements-slider">
+      <div class="announcements-track">
+        {% assign raw_announcements = announcement_texts | split: ',' %}
+        {% for announcement in raw_announcements %}
+          {% if announcement != '' %}
+            {% assign texts = announcement | split: '::' %}
+            <div class="banner-message announcement" data-index="{{ forloop.index0 }}">
+              <span class="desktop">{{ texts[0] }}</span>
+              <span class="mobile">{{ texts[1] }}</span>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</div>
 
-  #shopify-section-{{ section.id }}.text_container span a:hover {
+<style>
+  #shopify-section-{{ section.id }} {
+    background-color: {{ section.settings.background_color }};
+    color: {{ section.settings.text_color }};
+  }
+  
+  #shopify-section-{{ section.id }} .calculator-wrapper {
+    height: calc(40px + ({{ section.settings.desktop_spacing }}px * 2));
+    display: flex;
+    align-items: center;
+    justify-content: {% case section.settings.desktop_alignment %}
+      {% when 'left' %}flex-start
+      {% when 'right' %}flex-end
+      {% else %}center
+    {% endcase %};
+  }
+  
+  /* Add padding to shipping alert only when visible (threshold met) */
+  #shopify-section-{{ section.id }} .skinny-banner-wrapper[data-threshold-met="true"] .shipping-alert {
+    height: calc(40px + ({{ section.settings.desktop_spacing }}px * 2));
+    display: flex;
+    align-items: center;
+    justify-content: {% case section.settings.desktop_alignment %}
+      {% when 'left' %}flex-start
+      {% when 'right' %}flex-end
+      {% else %}center
+    {% endcase %};
+  }
+  
+  #shopify-section-{{ section.id }} .desktop {
+    text-align: {{ section.settings.desktop_alignment }};
+  }
+  
+  #shopify-section-{{ section.id }} .mobile {
+    text-align: {% if section.settings.mobile_alignment == 'sync' %}{{ section.settings.desktop_alignment }}{% else %}{{ section.settings.mobile_alignment }}{% endif %};
+  }
+  
+  #shopify-section-{{ section.id }} a {
+    color: {{ section.settings.link_color }};
+    text-decoration: {% if section.settings.link_underline %}underline{% else %}none{% endif %};
+    transition: color 0.2s ease-in-out;
+  }
+  
+  #shopify-section-{{ section.id }} a:hover {
     color: {{ section.settings.link_hover_color }};
   }
 
-  {% for block in section.blocks %}
-    {% capture text_color %}
-      {% if block.settings.text_color.alpha != 0.0 %}
-        color: {{ block.settings.text_color }};
-      {% else %}
-        color: {{ section.settings.text_color }};
-      {% endif %}
-    {% endcapture %}
-
-    {% capture link_color %}
-      {% if block.settings.link_color.alpha != 0.0 %}
-        color: {{ block.settings.link_color }};
-      {% else %}
-        color: {{ section.settings.link_color }};
-      {% endif %}
-    {% endcapture %}
-
-    {% capture link_hover_color %}
-      {% if block.settings.link_hover_color.alpha != 0.0 %}
-        color: {{ block.settings.link_hover_color }};
-      {% else %}
-        color: {{ section.settings.link_hover_color }};
-      {% endif %}
-    {% endcapture %}
-
-    #shopify-section-{{ section.id }} #text-{{ block.id }}-block {
-      background-color: {{ block.settings.background_color }};
-    }
-    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span *:not(a) {
-      {{ text_color }}
-    }
-    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span a, 
-    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span a em, 
-    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span a strong {
-      {{ link_color }}
-    }
-    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span a:hover,
-    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span a:hover em,
-    #shopify-section-{{ section.id }} #text-{{ block.id }}-block span a:hover strong {
-      {{ link_hover_color }}
-    }
-
-  {% endfor %}
-
-  #shopify-section-{{ section.id }}
-  .mobile_only {
+  #shopify-section-{{ section.id }} .skinny-banner-wrapper[data-threshold-met="false"] .shipping-alert {
+    display: none;
+  }
+  
+  #shopify-section-{{ section.id }} .skinny-banner-wrapper[data-threshold-met="true"] .announcements-slider {
     display: none;
   }
 
-  @media only screen and (max-width: 798px) {
-    {% if section.settings.mobile_alignment != 'none' %}
-      #shopify-section-{{ section.id }}
-      .text_container {
-        justify-content: {{ section.settings.mobile_alignment }};
-      }
-    {% endif %}
+  #shopify-section-{{ section.id }} .announcements-slider {
+    position: relative;
+    overflow: hidden;
+    height: calc(40px + ({{ section.settings.desktop_spacing }}px * 2));
+  }
+  
+  #shopify-section-{{ section.id }} .announcements-track {
+    position: absolute;
+    width: 100%;
+  }
+  
+  #shopify-section-{{ section.id }} .announcements-track.no-transition {
+    transition: none;
+  }
+  
+  #shopify-section-{{ section.id }} .announcement {
+    height: calc(40px + ({{ section.settings.desktop_spacing }}px * 2));
+    display: flex;
+    align-items: center;
+    justify-content: {% case section.settings.desktop_alignment %}
+      {% when 'left' %}flex-start
+      {% when 'right' %}flex-end
+      {% else %}center
+    {% endcase %};
+  }
 
-    #shopify-section-{{ section.id }}
-    ul.announcement_container li {
-      height: {{ section.settings.mobile_height }}px;
-    }
+  #shopify-section-{{ section.id }} .announcement .desktop,
+  #shopify-section-{{ section.id }} .announcement .mobile {
+    width: 100%;
+  }
 
-    #shopify-section-{{ section.id }}
-    ul.announcement_container {
-      max-height: {{ section.settings.mobile_height }}px;
-      height: {{ section.settings.mobile_height }}px;
-    }
+  #shopify-section-{{ section.id }} .calculator-message {
+    display: none;
+  }
 
-    #shopify-section-{{ section.id }}
-    .announcement_main {
-      height: {{ section.settings.mobile_height }}px;
+  #shopify-section-{{ section.id }} .calculator-wrapper[data-state="empty"] [data-state="empty"],
+  #shopify-section-{{ section.id }} .calculator-wrapper[data-state="progress"] [data-state="progress"],
+  #shopify-section-{{ section.id }} .calculator-wrapper[data-state="success"] [data-state="success"] {
+    display: block;
+  }
+
+  #shopify-section-{{ section.id }} .mobile {
+    display: none;
+  }
+
+  @media screen and (max-width: 768px) {
+    #shopify-section-{{ section.id }} .calculator-wrapper {
+      height: calc(40px + ({{ section.settings.mobile_spacing }}px * 2));
+      justify-content: {% if section.settings.mobile_alignment == 'sync' %}
+        {% case section.settings.desktop_alignment %}
+          {% when 'left' %}flex-start
+          {% when 'right' %}flex-end
+          {% else %}center
+        {% endcase %}
+      {% else %}
+        {% case section.settings.mobile_alignment %}
+          {% when 'left' %}flex-start
+          {% when 'right' %}flex-end
+          {% else %}center
+        {% endcase %}
+      {% endif %};
     }
-    #shopify-section-{{ section.id }}
-    .mobile_only {
-      display: block;
-    }
-    #shopify-section-{{ section.id }}
-    .desktop_only {
+    #shopify-section-{{ section.id }} .desktop {
       display: none;
     }
+    #shopify-section-{{ section.id }} .mobile {
+      display: inline;
+    }
+    #shopify-section-{{ section.id }} .announcements-slider {
+      height: calc(40px + ({{ section.settings.mobile_spacing }}px * 2));
+    }
+    #shopify-section-{{ section.id }} .announcement {
+      height: calc(40px + ({{ section.settings.mobile_spacing }}px * 2));
+    }
+    #shopify-section-{{ section.id }} .announcement {
+      justify-content: {% if section.settings.mobile_alignment == 'sync' %}
+        {% case section.settings.desktop_alignment %}
+          {% when 'left' %}flex-start
+          {% when 'right' %}flex-end
+          {% else %}center
+        {% endcase %}
+      {% else %}
+        {% case section.settings.mobile_alignment %}
+          {% when 'left' %}flex-start
+          {% when 'right' %}flex-end
+          {% else %}center
+        {% endcase %}
+      {% endif %};
+    }
+    #shopify-section-{{ section.id }} .skinny-banner-wrapper[data-threshold-met="true"] .shipping-alert {
+      height: calc(40px + ({{ section.settings.mobile_spacing }}px * 2));
+      justify-content: {% if section.settings.mobile_alignment == 'sync' %}
+        {% case section.settings.desktop_alignment %}
+          {% when 'left' %}flex-start
+          {% when 'right' %}flex-end
+          {% else %}center
+        {% endcase %}
+      {% else %}
+        {% case section.settings.mobile_alignment %}
+          {% when 'left' %}flex-start
+          {% when 'right' %}flex-end
+          {% else %}center
+        {% endcase %}
+      {% endif %};
+    }
   }
-{% endstyle %}
 
-<div class="announcement_main" style="background-color: {{ section.settings.background_color }}">
-  <ul class="announcement_container">
-    {% for block in section.blocks %}
-      <li>
-        <div class="text_container" id="text-{{ block.id }}-block">
-          <span class="desktop_only">{{ block.settings.title }}</span>
-          <span class="mobile_only">
-            {%- if block.settings.text_mobile != blank -%}
-              {{- block.settings.text_mobile -}}
-            {%- else -%}
-              {{- block.settings.title -}}
-            {%- endif -%}
-          </span>
-        </div>
-      </li>
-    {% endfor %}
-  </ul>
-</div>
-
-<script
-  src="https://code.jquery.com/jquery-3.7.1.min.js"
-  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-  crossorigin="anonymous"></script>
-
-{% if section.blocks.size > 1 %}
-  <script>
-     var x = 0,
-       container{{ section.id | handleize | replace: "-", "" }} = $('#shopify-section-{{ section.id }} .announcement_container'),
-       items = container{{ section.id | handleize | replace: "-", "" }}.find('li'),
-       containerHeight = 0,
-       numberVisible = 5,
-       intervalSec = {{ section.settings.announcement_delay | json}} * 1000;
-     // var desktopText{{ section.id }} = $('#shopify-section-{{ section.id }} .text_container .desktop_only')
-     // console.log(desktopText{{ section.id }}.height())
-    
-     if (!container{{ section.id | handleize | replace: "-", "" }}.find('li:first').hasClass("first")) {
-       container{{ section.id | handleize | replace: "-", "" }}.find('li:first').addClass("first");
-     }
-    
-     items.each(function () {
-       if (x < numberVisible) {
-         containerHeight = containerHeight + $(this).outerHeight();
-         x++;
-       }
-     });
-    
-    
-     function vertCycle() {
-       var firstItem = container{{ section.id | handleize | replace: "-", "" }}.find('li.first'); // Select the first item as a jQuery object
-       var firstItemHtml = firstItem.html(); // Get the HTML content
-    
-       container{{ section.id | handleize | replace: "-", "" }}.append('<li>' + firstItemHtml + '</li>');
-       if (window.innerWidth < 798) {
-         firstItem.animate({ marginTop: "-{{ section.settings.mobile_height }}px" }, {{ section.settings.transition_speed }}, function() {
-           $(this).remove();
-           container{{ section.id | handleize | replace: "-", "" }}.find('li:first').addClass("first");
-         });
-       } else {
-         firstItem.animate({ marginTop: "-{{ section.settings.desktop_height }}px" }, {{ section.settings.transition_speed }}, function() {
-           $(this).remove();
-           container{{ section.id | handleize | replace: "-", "" }}.find('li:first').addClass("first");
-         });
-       }
-     }
-    
-     if (intervalSec < 700) {
-       intervalSec = 700;
-     }
-    
-     var init = setInterval(vertCycle, intervalSec);
-    
-     container{{ section.id | handleize | replace: "-", "" }}.hover(function () {
-       clearInterval(init);
-     }, function () {
-       init = setInterval(vertCycle, intervalSec);
-     });
-  </script>
-{% endif %}
+  {% for block in section.blocks %}
+    {% case block.type %}
+      {% when 'announcement' %}
+        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] {
+          {% if block.settings.background_color %}background-color: {{ block.settings.background_color }};{% endif %}
+          {% if block.settings.text_color %}color: {{ block.settings.text_color }};{% endif %}
+        }
+        
+        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] a {
+          {% if block.settings.link_color %}color: {{ block.settings.link_color }};{% endif %}
+        }
+        
+        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] a:hover {
+          {% if block.settings.link_hover_color %}color: {{ block.settings.link_hover_color }};{% endif %}
+        }
+      
+      {% when 'free_shipping_alert' %}
+        #shopify-section-{{ section.id }} .shipping-alert {
+          {% if block.settings.background_color %}background-color: {{ block.settings.background_color }};{% endif %}
+          {% if block.settings.text_color %}color: {{ block.settings.text_color }};{% endif %}
+        }
+        
+        #shopify-section-{{ section.id }} .shipping-alert a {
+          {% if block.settings.link_color %}color: {{ block.settings.link_color }};{% endif %}
+        }
+        
+        #shopify-section-{{ section.id }} .shipping-alert a:hover {
+          {% if block.settings.link_hover_color %}color: {{ block.settings.link_hover_color }};{% endif %}
+        }
+      
+      {% when 'free_shipping_calculator' %}
+        #shopify-section-{{ section.id }} .calculator-wrapper {
+          {% if block.settings.background_color %}background-color: {{ block.settings.background_color }};{% endif %}
+          {% if block.settings.text_color %}color: {{ block.settings.text_color }};{% endif %}
+        }
+        
+        #shopify-section-{{ section.id }} .calculator-wrapper a {
+          {% if block.settings.link_color %}color: {{ block.settings.link_color }};{% endif %}
+        }
+        
+        #shopify-section-{{ section.id }} .calculator-wrapper a:hover {
+          {% if block.settings.link_hover_color %}color: {{ block.settings.link_hover_color }};{% endif %}
+        }
+    {% endcase %}
+  {% endfor %}
+</style>
 
 {% schema %}
   {
-    "name": "JP Skinny Banner Promo",
+    "name": "JP Skinny Banner",
+    "tag": "section",
+    "class": "skinny-banner-section",
     "enabled_on": {
-      "groups": ["header", "footer"],
-      "templates": [
-        "index",
-        "page",
-        "blog",
-        "article",
-        "collection",
-        "product"
-      ]
+      "groups": ["header"]
     },
     "settings": [
       {
         "type": "header",
-        "content": "Animation"
+        "content": "Animation Settings"
       },
       {
         "type": "range",
+        "id": "animation_delay",
         "min": 1,
         "max": 10,
-        "step": 0.5,
-        "id": "announcement_delay",
+        "step": 1,
         "unit": "sec",
         "label": "Delay",
-        "default": 3
+        "default": 5,
       },
       {
         "type": "range",
-        "min": 250,
-        "max": 2500,
-        "step": 250,
         "id": "transition_speed",
+        "min": 250,
+        "max": 5000,
+        "step": 50,
         "unit": "ms",
         "label": "Transition speed (milliseconds)",
-        "default": 500
+        "default": 500,
       },
       {
         "type": "header",
         "content": "Color Settings"
-      }, {
+      },
+      {
         "type": "color",
         "id": "background_color",
-        "label": "Background color"
-      }, {
+        "label": "Background color",
+        "default": "#f8f8f8"
+      },
+      {
         "type": "color",
         "id": "text_color",
-        "label": "Color"
-      }, {
+        "label": "Text color",
+        "default": "#333333"
+      },
+      {
         "type": "color",
         "id": "link_color",
-        "label": "Link color"
-      }, {
+        "label": "Link color",
+        "default": "#000000"
+      },
+      {
         "type": "color",
         "id": "link_hover_color",
-        "label": "Link hover color"
-      }, {
+        "label": "Link hover color",
+        "default": "#555555"
+      },
+      {
         "type": "checkbox",
         "id": "link_underline",
         "label": "Link underline",
-        "default": false
-      }, {
+        "default": true
+      },
+      {
         "type": "header",
         "content": "Desktop Text"
-      }, {
+      },
+      {
         "type": "range",
-        "id": "desktop_height",
-        "label": "Desktop Vertical Spacing",
-        "min": 10,
-        "max": 200,
-        "step": 10,
-        "default": 50,
-        "unit": "px"
-      }, {
+        "id": "desktop_spacing",
+        "min": 0,
+        "max": 64,
+        "step": 1,
+        "unit": "px",
+        "label": "Desktop vertical spacing",
+        "default": 16
+      },
+      {
         "type": "select",
         "id": "desktop_alignment",
         "label": "Desktop text alignment",
         "options": [
           {
-            "value": "start",
+            "value": "left",
             "label": "Left"
-          }, {
+          },
+          {
             "value": "center",
             "label": "Center"
-          }, {
-            "value": "end",
+          },
+          {
+            "value": "right",
             "label": "Right"
           }
         ],
         "default": "center"
-      }, {
+      },
+      {
         "type": "header",
         "content": "Mobile Text"
-      }, {
+      },
+      {
         "type": "range",
-        "id": "mobile_height",
-        "label": "Mobile Vertical Spacing",
-        "min": 10,
-        "max": 200,
-        "step": 10,
-        "default": 50,
-        "unit": "px"
-      }, {
+        "id": "mobile_spacing",
+        "min": 0,
+        "max": 32,
+        "step": 1,
+        "unit": "px",
+        "label": "Mobile vertical spacing",
+        "default": 12
+      },
+      {
         "type": "select",
         "id": "mobile_alignment",
         "label": "Mobile text alignment",
         "options": [
           {
-            "value": "none",
+            "value": "sync",
             "label": "Same as desktop"
-          }, {
-            "value": "start",
+          },
+          {
+            "value": "left",
             "label": "Left"
-          }, {
+          },
+          {
             "value": "center",
             "label": "Center"
-          }, {
-            "value": "end",
+          },
+          {
+            "value": "right",
             "label": "Right"
           }
         ],
-        "default": "none"
+        "default": "sync"
       }
     ],
     "blocks": [
       {
-        "type": "text",
+        "type": "announcement",
         "name": "Announcement",
         "settings": [
           {
             "type": "richtext",
-            "id": "title",
-            "label": "Desktop Text"
+            "id": "desktop_text",
+            "label": "Desktop text",
+            "default": "<p>Your announcement text here</p>"
           },
           {
             "type": "richtext",
-            "id": "text_mobile",
-            "label": "Mobile Text (optional)"
+            "id": "mobile_text",
+            "label": "Mobile text (optional)",
+            "default": "<p>Mobile announcement text</p>"
           },
           {
             "type": "header",
@@ -372,16 +481,159 @@
           {
             "type": "color",
             "id": "background_color",
-            "label": "Background"
-          }, {
+            "label": "Background color"
+          },
+          {
             "type": "color",
             "id": "text_color",
-            "label": "Color"
-          }, {
+            "label": "Text color"
+          },
+          {
             "type": "color",
             "id": "link_color",
             "label": "Link color"
-          }, {
+          },
+          {
+            "type": "color",
+            "id": "link_hover_color",
+            "label": "Link hover color"
+          }
+        ]
+      },
+      {
+        "type": "free_shipping_alert",
+        "name": "Free Shipping Alert",
+        "limit": 1,
+        "settings": [
+          {
+            "type": "text",
+            "id": "threshold",
+            "label": "Free shipping threshold",
+            "default": "75.00",
+            "info": "Show/hide this alert based on cart value (e.g., 75.00)"
+          },
+          {
+            "type": "richtext",
+            "id": "desktop_text",
+            "label": "Desktop text",
+            "default": "<p>Free shipping on all orders!</p>"
+          },
+          {
+            "type": "richtext",
+            "id": "mobile_text",
+            "label": "Mobile text",
+            "default": "<p>Free shipping!</p>"
+          },
+          {
+            "type": "header",
+            "content": "Color Settings"
+          },
+          {
+            "type": "color",
+            "id": "background_color",
+            "label": "Background color"
+          },
+          {
+            "type": "color",
+            "id": "text_color",
+            "label": "Text color"
+          },
+          {
+            "type": "color",
+            "id": "link_color",
+            "label": "Link color"
+          },
+          {
+            "type": "color",
+            "id": "link_hover_color",
+            "label": "Link hover color"
+          }
+        ]
+      },
+      {
+        "type": "free_shipping_calculator",
+        "name": "Free Shipping Counter",
+        "limit": 1,
+        "settings": [
+          {
+            "type": "text",
+            "id": "threshold",
+            "label": "Free shipping threshold",
+            "default": "200.00",
+            "info": "Show/hide this calculator based on cart value (e.g., 75.00)"
+          },
+          {
+            "type": "header",
+            "content": "Empty Cart Message"
+          },
+          {
+            "type": "richtext",
+            "id": "empty_cart_desktop",
+            "label": "Desktop text",
+            "default": "<p>Free shipping on orders over $[threshold]</p>",
+            "info": "Use [threshold] to show threshold amount"
+          },
+          {
+            "type": "richtext",
+            "id": "empty_cart_mobile",
+            "label": "Mobile text",
+            "default": "<p>Free shipping over $[threshold]</p>",
+            "info": "Use [threshold] to show threshold amount"
+          },
+          {
+            "type": "header",
+            "content": "Below Threshold Message"
+          },
+          {
+            "type": "richtext",
+            "id": "progress_desktop",
+            "label": "Desktop text",
+            "default": "<p>Add $[remaining] more for free shipping</p>",
+            "info": "Use [remaining] to show calculated amount left"
+          },
+          {
+            "type": "richtext",
+            "id": "progress_mobile",
+            "label": "Mobile text",
+            "default": "<p>$[remaining] to free shipping</p>",
+            "info": "Use [remaining] to show calculated amount left"
+          },
+          {
+            "type": "header",
+            "content": "Above Threshold Message"
+          },
+          {
+            "type": "richtext",
+            "id": "desktop_success_text",
+            "label": "Desktop text",
+            "default": "<p>Congratulations! You have free shipping</p>"
+          },
+          {
+            "type": "richtext",
+            "id": "mobile_success_text",
+            "label": "Mobile text",
+            "default": "<p>You have free shipping!</p>"
+          },
+          {
+            "type": "header",
+            "content": "Color Settings"
+          },
+          {
+            "type": "color",
+            "id": "background_color",
+            "label": "Background color"
+          },
+          {
+            "type": "color",
+            "id": "text_color",
+            "label": "Text color"
+          },
+          {
+            "type": "color",
+            "id": "link_color",
+            "label": "Link color"
+          },
+          {
             "type": "color",
             "id": "link_hover_color",
             "label": "Link hover color"
@@ -391,8 +643,278 @@
     ],
     "presets": [
       {
-        "name": "JP Skinny Banner Promo"
+        "name": "JP Skinny Banner",
+        "blocks": [
+          {
+            "type": "announcement",
+            "settings": {
+              "desktop_text": "<p>First Announcement (Desktop)</p>",
+              "mobile_text": "<p>First Announcement (Mobile)</p>"
+            }
+          },
+          {
+            "type": "announcement",
+            "settings": {
+              "desktop_text": "<p>Second Announcement (Desktop)</p>",
+              "mobile_text": "<p>Second Announcement (Mobile)</p>"
+            }
+          },
+          {
+            "type": "free_shipping_alert",
+            "settings": {
+              "threshold": "22.00",
+              "desktop_text": "<p>Congratulations! You've unlocked free shipping!</p>",
+              "mobile_text": "<p>You've unlocked free shipping!</p>"
+            }
+          },
+          {
+            "type": "free_shipping_calculator",
+            "settings": {
+              "threshold": "25.00",
+              "empty_cart_desktop": "<p>Free shipping on orders over [threshold]</p>",
+              "empty_cart_mobile": "<p>Free shipping over [threshold]</p>",
+              "progress_desktop": "<p>Add [remaining] more for free shipping</p>",
+              "progress_mobile": "<p>[remaining] to free shipping</p>",
+              "desktop_success_text": "<p>Congratulations! You have free shipping</p>",
+              "mobile_success_text": "<p>You have free shipping!</p>"
+            }
+          }
+        ]
       }
     ]
   }
 {% endschema %}
+
+{% comment %}First script tag for network interception{% endcomment %}
+<script>
+window.JadePuma=window.JadePuma||{},window.JadePuma.NetworkInterceptor=window.JadePuma.NetworkInterceptor||class t{static #a=null;#b;#c;#d;#e=new Set;constructor(){if(t.#a)return t.#a;this.#b=window.fetch,this.#c=XMLHttpRequest.prototype.open,this.#d=XMLHttpRequest.prototype.send,t.#a=this}addInterceptor(t){this.#e.add(t)}monkeyPatchFetch(){let t=this.#b,e=this.#e;window.fetch=async function(r,n){let a="string"==typeof r?r:r.url,s=await t.apply(this,arguments);return e.forEach(t=>{t.onFetchResponse(a,s.clone())}),s}}monkeyPatchXHR(){let t=this.#c,e=this.#d,r=this.#e;XMLHttpRequest.prototype.open=function(...e){return this._url=e[1],t.apply(this,e)},XMLHttpRequest.prototype.send=function(...t){return this._url&&this.addEventListener("readystatechange",function(){4===this.readyState&&r.forEach(t=>{t.onXHRResponse(this._url,this)})}),e.apply(this,t)}}init(){this.monkeyPatchFetch(),this.monkeyPatchXHR()}reset(){window.fetch=this.#b,XMLHttpRequest.prototype.open=this.#c,XMLHttpRequest.prototype.send=this.#d}},window.JadePuma.CartInterceptor=window.JadePuma.CartInterceptor||class t{static #a=null;constructor(){return t.#a||(t.#a=this)}#f=["/cart/add.js","/cart/change.js","/cart/update.js","/cart/clear.js"];#g(e){return this.#f.some(t=>e.includes(t))}#h(r,n=null){window.dispatchEvent(new CustomEvent("CartUpdated",{detail:{mutation:n,cart:r,source:n?.source||"direct"}}))}async #i(){let a=await fetch("/cart.js");return a.json()}async onFetchResponse(t,e){if(this.#g(t))try{let r=await e.clone().json(),n=await this.#i();this.#h(n,{endpoint:t,response:r,source:"fetch"})}catch(a){console.warn("[JadePuma] Error handling cart mutation:",a)}else if(t.includes("/cart.js"))try{let s=await e.json();this.#h(s)}catch(i){console.warn("[JadePuma] Error parsing cart response:",i)}}async onXHRResponse(t,e){if(this.#g(t))try{let r;""===e.responseType||"text"===e.responseType?r=JSON.parse(e.responseText):"json"===e.responseType&&(r=e.response);let n=await this.#i();this.#h(n,{endpoint:t,response:r,source:"xhr"})}catch(a){console.warn("[JadePuma] Error handling cart mutation:",a)}else if(t.includes("/cart.js"))try{let s;""===e.responseType||"text"===e.responseType?s=JSON.parse(e.responseText):"json"===e.responseType&&(s=e.response),s&&this.#h(s)}catch(i){console.warn("[JadePuma] Error parsing cart response:",i)}}},window.JadePuma.networkInterceptor=window.JadePuma.networkInterceptor||(()=>{let t=new window.JadePuma.NetworkInterceptor;return t.addInterceptor(new window.JadePuma.CartInterceptor),t.init(),t})(),document.currentScript.remove();
+</script>
+
+{% comment %}Section JavaScript{% endcomment %}
+<script>
+  //# sourceURL=sections/test.liquid/section.js
+  (() => {
+    class JPSkinnyBannerPromo {
+      static #instances = new Set();
+
+      // Static handler for cart updates
+      static handleCartUpdate(event) {
+        if (!event.detail.mutation) return;
+        
+        const cartTotal = event.detail.cart.total_price;
+        const itemCount = event.detail.cart.item_count;
+        
+        // Update all instances
+        JPSkinnyBannerPromo.#instances.forEach(section => {
+          section.updateState(cartTotal, itemCount);
+        });
+      }
+
+      constructor(element) {
+        this.wrapper = element.querySelector('.skinny-banner-wrapper');
+        if (!this.wrapper) return;
+
+        JPSkinnyBannerPromo.#instances.add(this);
+        
+        // Setup calculator if present
+        this.calculator = element.querySelector('.calculator-wrapper');
+        if (this.calculator) {
+          this.threshold = parseInt(this.calculator.dataset.thresholdCents || 0, 10);
+          // Store original messages
+          this.messages = {
+            empty: {
+              desktop: this.calculator.querySelector('[data-state="empty"] .desktop').innerHTML,
+              mobile: this.calculator.querySelector('[data-state="empty"] .mobile').innerHTML
+            },
+            progress: {
+              desktop: `{{ calculator.progress_desktop | replace: '"', '\"' }}`,
+              mobile: `{{ calculator.progress_mobile | replace: '"', '\"' }}`
+            }
+          };
+          this.initializeState();
+          this.init();
+          return;
+        }
+
+        // Initialize threshold state first
+        if (this.wrapper.hasAttribute('data-threshold')) {
+          this.threshold = parseInt(this.wrapper.dataset.thresholdCents || 0, 10);
+          this.initializeState();
+        }
+
+        // Setup announcements slider if needed
+        this.track = element.querySelector('.announcements-track');
+        this.announcements = element.querySelectorAll('.announcement');
+        if (this.announcements.length > 1) {
+          this.currentIndex = 0;
+          this.startSlideshow();
+        }
+
+        this.init();
+      }
+
+      startSlideshow() {
+        // Get all announcements
+        const announcements = Array.from(this.announcements);
+        if (announcements.length <= 1) return;
+        
+        // Clone first announcement and append to end for infinite loop
+        const clone = this.announcements[0].cloneNode(true);
+        this.track.appendChild(clone);
+        
+        // Set initial position
+        this.currentIndex = 0;
+        // Start the sequence with precise timing
+        this.continueSlideshow();
+      }
+      
+      continueSlideshow() {
+        // Wait for Delay
+        this.slideTimeout = setTimeout(() => {
+          // Move to next slide with animation
+          this.currentIndex++;
+          const height = this.announcements[0].offsetHeight;
+          this.track.style.transition = `transform {{ section.settings.transition_speed }}ms ease-in-out`;
+          this.track.style.transform = `translateY(-${this.currentIndex * height}px)`;
+          
+          // If we've shown all slides including clone, reset to first
+          if (this.currentIndex >= this.announcements.length) {
+            // Wait exactly for transition to complete
+            this.resetTimeout = setTimeout(() => {
+              // Reset without animation
+              this.track.style.transition = 'none';
+              this.currentIndex = 0;
+              this.track.style.transform = 'translateY(0)';
+              this.track.getBoundingClientRect(); // Force reflow
+              
+              // Continue the sequence
+              this.continueSlideshow();
+            }, {{ section.settings.transition_speed }});
+          } else {
+            // Wait for transition to complete
+            this.resetTimeout = setTimeout(() => {
+              // Continue the sequence with next slide
+              this.continueSlideshow();
+            }, {{ section.settings.transition_speed }});
+          }
+        }, {{ section.settings.animation_delay | times: 1000 }});
+      }
+
+      async initializeState() {
+        try {
+          const response = await fetch('/cart.js');
+          const cart = await response.json();
+          this.updateState(cart.total_price, cart.item_count);
+        } catch (err) {
+          console.warn('[TestSection] Error initializing state:', err);
+        }
+      }
+
+      updateState(cartTotal, itemCount) {
+        if (this.calculator) {
+          // Helper function to replace placeholder text inside links
+          const replacePlaceholderInHTML = (html, placeholder, value) => {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            
+            // Find links that contain only the placeholder
+            const links = tempDiv.querySelectorAll('a');
+            links.forEach(link => {
+              if (link.textContent.trim() === `[${placeholder}]`) {
+                link.textContent = value;
+              }
+            });
+            
+            // Replace remaining placeholders in text nodes
+            const replaceInTextNodes = (node) => {
+              if (node.nodeType === Node.TEXT_NODE) {
+                if (node.textContent.includes(`[${placeholder}]`)) {
+                  node.textContent = node.textContent.replace(`[${placeholder}]`, value);
+                }
+              } else {
+                Array.from(node.childNodes).forEach(replaceInTextNodes);
+              }
+            };
+            
+            replaceInTextNodes(tempDiv);
+            
+            return tempDiv.innerHTML;
+          };
+          
+          if (itemCount === 0) {
+            const emptyMessage = this.calculator.querySelector('[data-state="empty"]');
+            if (emptyMessage) {
+              const thresholdFormatted = Shopify.formatMoney(this.threshold);
+              const desktopText = replacePlaceholderInHTML(
+                this.messages.empty.desktop,
+                'threshold',
+                thresholdFormatted
+              );
+              const mobileText = replacePlaceholderInHTML(
+                this.messages.empty.mobile,
+                'threshold',
+                thresholdFormatted
+              );
+              emptyMessage.querySelector('.desktop').innerHTML = desktopText;
+              emptyMessage.querySelector('.mobile').innerHTML = mobileText;
+            }
+            this.calculator.dataset.state = 'empty';
+          } else if (cartTotal >= this.threshold) {
+            this.calculator.dataset.state = 'success';
+          } else {
+            this.calculator.dataset.state = 'progress';
+            const remainingCents = this.threshold - cartTotal;
+            const remainingFormatted = Shopify.formatMoney(remainingCents);
+            const message = this.calculator.querySelector('[data-state="progress"]');
+            if (message) {
+              const desktopText = replacePlaceholderInHTML(
+                this.messages.progress.desktop,
+                'remaining',
+                remainingFormatted
+              );
+              const mobileText = replacePlaceholderInHTML(
+                this.messages.progress.mobile,
+                'remaining',
+                remainingFormatted
+              );
+              message.querySelector('.desktop').innerHTML = desktopText;
+              message.querySelector('.mobile').innerHTML = mobileText;
+            }
+          }
+          return;
+        }
+
+        // Handle alert/announcement states
+        if (this.wrapper.hasAttribute('data-threshold')) {
+          this.wrapper.dataset.thresholdMet = cartTotal >= this.threshold ? 'true' : 'false';
+        }
+      }
+
+      init() {
+        if (JPSkinnyBannerPromo.#instances.size === 1) {
+          window.addEventListener('CartUpdated', JPSkinnyBannerPromo.handleCartUpdate);
+        }
+      }
+
+      destroy() {
+        if (this.slideTimeout) {
+          clearTimeout(this.slideTimeout);
+        }
+        if (this.resetTimeout) {
+          clearTimeout(this.resetTimeout);
+        }
+        JPSkinnyBannerPromo.#instances.delete(this);
+        if (JPSkinnyBannerPromo.#instances.size === 0) {
+          window.removeEventListener('CartUpdated', JPSkinnyBannerPromo.handleCartUpdate);
+        }
+      }
+    }
+    
+    // Initialize
+    const element = document.currentScript.parentElement;
+    const section = new JPSkinnyBannerPromo(element);
+    section.init();
+    element.JPSkinnyBannerPromo = section;
+    document.currentScript.remove();
+  })();
+</script>
