@@ -1,7 +1,8 @@
+
 {%- # First check for calculator - pure Liquid render -%}
+{% if section.blocks.size > 0 %}
 {% assign has_calculator = false %}
 {% assign shipping_threshold = 0 %}
-{% assign announcement_texts = '' %}
 {% assign has_alert = false %}
 
 {%- # First pass: gather settings -%}
@@ -16,8 +17,6 @@
       {% assign shipping_threshold = block.settings.threshold | default: "0" %}
       {% assign alert = block.settings %}
       {% assign has_alert = true %}
-    {% when 'announcement' %}
-      {% assign announcement_texts = announcement_texts | append: block.settings.desktop_text | append: '::' | append: block.settings.mobile_text | append: ',' %}
   {% endcase %}
 {% endfor %}
 
@@ -88,13 +87,11 @@
     </div>
     <div class="announcements-slider">
       <div class="announcements-track">
-        {% assign raw_announcements = announcement_texts | split: ',' %}
-        {% for announcement in raw_announcements %}
-          {% if announcement != '' %}
-            {% assign texts = announcement | split: '::' %}
+        {% for block in section.blocks %}
+          {% if block.type == 'announcement' %}
             <div class="banner-message announcement" data-index="{{ forloop.index0 }}">
-              <span class="desktop">{{ texts[0] }}</span>
-              <span class="mobile">{{ texts[1] }}</span>
+              <span class="desktop">{{ block.settings.desktop_text }}</span>
+              <span class="mobile">{{ block.settings.mobile_text }}</span>
             </div>
           {% endif %}
         {% endfor %}
@@ -136,6 +133,7 @@
   
   #shopify-section-{{ section.id }} .desktop {
     text-align: {{ section.settings.desktop_alignment }};
+    font-size: {{ section.settings.font-size-desktop }}px;
   }
   
   #shopify-section-{{ section.id }} .mobile {
@@ -283,6 +281,61 @@
         #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] a:hover {
           {% if block.settings.link_hover_color %}color: {{ block.settings.link_hover_color }};{% endif %}
         }
+
+
+
+        {% if block.settings.link_as_button %}
+
+        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] p{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        }
+
+
+
+
+        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] a{
+          margin-left:10px;
+          padding:5px 3px;
+          padding-left: 10px;
+          padding-right: 10px;
+          font-size:0.8rem;
+          border-radius: 5px;
+          background-color: {{block.settings.button_bg}} !important;
+          color: {{block.settings.button_font_color}} !important;
+          text-decoration: none !important;
+        }
+
+        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] a:hover{
+          background-color: {{block.settings.button_bg_hover}} !important;;
+          color: {{block.settings.button_font_color_hover}} !important;;
+        }
+
+       @media only screen and (max-width: 798px) {
+
+
+        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] p{
+        display: block;
+        justify-content: center;
+        align-items: center;
+        }
+
+
+          #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] a{
+            padding:2px;
+            padding-left: 10px;
+            padding-right: 10px;
+            font-size:0.7rem;
+
+          }
+
+      }
+    {% endif %}
+
+
+
+
       
       {% when 'free_shipping_alert' %}
         #shopify-section-{{ section.id }} .shipping-alert {
@@ -315,9 +368,11 @@
   {% endfor %}
 </style>
 
+{% endif %}
+
 {% schema %}
   {
-    "name": "JP Skinny Banner",
+    "name": "JPC Skinny Banner",
     "tag": "section",
     "class": "skinny-banner-section",
     "settings": [
@@ -333,7 +388,7 @@
         "step": 1,
         "unit": "sec",
         "label": "Delay",
-        "default": 5,
+        "default": 5
       },
       {
         "type": "range",
@@ -343,7 +398,7 @@
         "step": 50,
         "unit": "ms",
         "label": "Transition speed (milliseconds)",
-        "default": 500,
+        "default": 500
       },
       {
         "type": "header",
@@ -378,6 +433,16 @@
       {
         "type": "header",
         "content": "Desktop Text"
+      },
+      {
+        "type": "range",
+        "id": "font-size-desktop",
+        "min": 10,
+        "max": 30,
+        "step": 1,
+        "unit": "px",
+        "label": "Desktop font size",
+        "default": 16
       },
       {
         "type": "range",
@@ -464,6 +529,32 @@
             "id": "mobile_text",
             "label": "Mobile text (optional)",
             "default": "<p>Mobile announcement text</p>"
+          },
+          {
+            "type": "checkbox",
+            "id": "link_as_button",
+            "label": "Show link as button",
+            "default": false
+          },
+          {
+            "type": "color",
+            "id": "button_bg",
+            "label": "Button background"
+          },
+          {
+            "type": "color",
+            "id": "button_font_color",
+            "label": "Font color"
+          },
+          {
+            "type": "color",
+            "id": "button_bg_hover",
+            "label": "Button background hover"
+          },
+          {
+            "type": "color",
+            "id": "button_font_color_hover",
+            "label": "Font color hover"
           },
           {
             "type": "header",
@@ -632,7 +723,7 @@
     ],
     "presets": [
       {
-        "name": "JP Skinny Banner"
+        "name": "JPC Skinny Banner"
       }
     ]
   }
