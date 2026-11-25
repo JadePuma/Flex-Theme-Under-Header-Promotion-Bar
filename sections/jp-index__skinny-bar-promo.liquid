@@ -88,12 +88,12 @@
     <div class="announcements-slider">
       <div class="announcements-track">
         {% for block in section.blocks %}
-          {% if block.type == 'announcement' %}
-            <div class="banner-message announcement" data-index="{{ forloop.index0 }}">
+          {% if block.type == 'announcement' %}{% if block.settings.desktop_text != blank or block.settings.mobile_text != blank %}
+            <div class="banner-message announcement" data-block-id="{{ block.id }}" {{ block.shopify_attributes }}>
               <span class="desktop">{{ block.settings.desktop_text }}</span>
-              <span class="mobile">{{ block.settings.mobile_text }}</span>
+              <span class="mobile">{% if block.settings.mobile_text != blank %}{{ block.settings.mobile_text }}{% else %}{{ block.settings.desktop_text }}{% endif %}</span>
             </div>
-          {% endif %}
+          {% endif %}{% endif %}
         {% endfor %}
       </div>
     </div>
@@ -269,16 +269,16 @@
   {% for block in section.blocks %}
     {% case block.type %}
       {% when 'announcement' %}
-        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] {
+        #shopify-section-{{ section.id }} .announcement[data-block-id="{{ block.id }}"] {
           {% if block.settings.background_color %}background-color: {{ block.settings.background_color }};{% endif %}
           {% if block.settings.text_color %}color: {{ block.settings.text_color }};{% endif %}
         }
         
-        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] a {
+        #shopify-section-{{ section.id }} .announcement[data-block-id="{{ block.id }}"] a {
           {% if block.settings.link_color %}color: {{ block.settings.link_color }};{% endif %}
         }
         
-        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] a:hover {
+        #shopify-section-{{ section.id }} .announcement[data-block-id="{{ block.id }}"] a:hover {
           {% if block.settings.link_hover_color %}color: {{ block.settings.link_hover_color }};{% endif %}
         }
 
@@ -286,7 +286,7 @@
 
         {% if block.settings.link_as_button %}
 
-        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] p{
+        #shopify-section-{{ section.id }} .announcement[data-block-id="{{ block.id }}"] p{
         display: flex;
         justify-content: center;
         align-items: center;
@@ -295,7 +295,7 @@
 
 
 
-        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] a{
+        #shopify-section-{{ section.id }} .announcement[data-block-id="{{ block.id }}"] a{
           margin-left:10px;
           padding:5px 3px;
           padding-left: 10px;
@@ -307,7 +307,7 @@
           text-decoration: none !important;
         }
 
-        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] a:hover{
+        #shopify-section-{{ section.id }} .announcement[data-block-id="{{ block.id }}"] a:hover{
           background-color: {{block.settings.button_bg_hover}} !important;;
           color: {{block.settings.button_font_color_hover}} !important;;
         }
@@ -315,14 +315,14 @@
        @media only screen and (max-width: 798px) {
 
 
-        #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] p{
+        #shopify-section-{{ section.id }} .announcement[data-block-id="{{ block.id }}"] p{
         display: block;
         justify-content: center;
         align-items: center;
         }
 
 
-          #shopify-section-{{ section.id }} .announcement[data-index="{{ forloop.index0 }}"] a{
+          #shopify-section-{{ section.id }} .announcement[data-block-id="{{ block.id }}"] a{
             padding:2px;
             padding-left: 10px;
             padding-right: 10px;
